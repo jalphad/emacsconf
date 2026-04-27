@@ -334,12 +334,12 @@
     ;; Movement
     (define-key map (kbd "f") #'go-structural-forward)
     (define-key map (kbd "b") #'go-structural-backward)
-    (define-key map (kbd "u") #'go-structural-up)
-    (define-key map (kbd "d") #'go-structural-down)
+    (define-key map (kbd "p") #'go-structural-up)
+    (define-key map (kbd "n") #'go-structural-down)
 
     ;; Region / structure
-    (define-key map (kbd "m") #'go-structural-mark)
-    (define-key map (kbd "e") #'go-structural-expand)
+    (define-key map (kbd "h") #'go-structural-mark)
+    (define-key map (kbd "SPC") #'go-structural-expand)
 
     ;; Editing
     (define-key map (kbd "k") #'go-structural-kill)
@@ -347,9 +347,9 @@
     (define-key map (kbd "P") #'go-structural-drag-up)
 
     ;; LSP navigation
-    (define-key map (kbd "g") #'go-goto-definition)
-    (define-key map (kbd "r") #'go-goto-references)
-    (define-key map (kbd "p") #'go-pop-back)
+    (define-key map (kbd ".") #'go-goto-definition)
+    (define-key map (kbd "?") #'go-goto-references)
+    (define-key map (kbd ",") #'go-pop-back)
 
     map))
 

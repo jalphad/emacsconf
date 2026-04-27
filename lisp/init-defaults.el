@@ -56,6 +56,12 @@
 
 ;; Enable repeat-mode
 (repeat-mode 1)
+;; Exit by pressing Return
+(setq repeat-exit-key "RET")
+
+;; Visual indicator in mode line that repeat is active
+(setq repeat-echo-function #'repeat-echo-mode-line)
+
 
 ;; When a region is active and you start typing, replace the selected text
 ;; immediately (the behaviour you'd expect from virtually every other editor).
@@ -156,6 +162,15 @@ The DWIM behaviour of this command is as follows:
                (not (file-writable-p buffer-file-name)))
       (find-alternate-file
        (concat "/sudo:root@localhost:" buffer-file-name)))))
+
+;; ----------------------------------------------------------------------------
+;; Direnv integration
+;; ----------------------------------------------------------------------------
+
+(use-package envrc
+  :hook (after-init . envrc-global-mode))
+
+(use-package inheritenv)
 
 ;; ----------------------------------------------------------------------------
 ;; Other defaults

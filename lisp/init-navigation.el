@@ -78,6 +78,58 @@
   ;; Automatically enable preview in embark collect buffers
   (embark-collect-mode . consult-preview-at-point-mode))
 
+;; ----------------------------
+;; Repeat map
+;; ----------------------------
+
+(defvar my-basic-repeat-map
+  (let ((map (make-sparse-keymap)))
+    ;; Movement
+    (define-key map (kbd "f") #'forward-char)
+    (define-key map (kbd "g") #'forward-word)
+    (define-key map (kbd "b") #'backward-char)
+    (define-key map (kbd "v") #'backward-word)
+    (define-key map (kbd "p") #'previous-line)
+    (define-key map (kbd "n") #'next-line)
+    (define-key map (kbd "a") #'move-beginning-of-line)
+    (define-key map (kbd "e") #'move-end-of-line)
+
+    ;; Editing
+    (define-key map (kbd "d") #'delete-char)
+    (define-key map (kbd "k") #'kill-line)
+    (define-key map (kbd "w") #'kill-region)
+    (define-key map (kbd "c") #'kill-ring-save)
+    (define-key map (kbd "SPC") #'set-mark-command)
+    (define-key map (kbd "y") #'yank)
+    (define-key map (kbd "/") #'undo)
+
+    (define-key map (kbd "1") #'digit-argument)
+    (define-key map (kbd "2") #'digit-argument)
+    (define-key map (kbd "3") #'digit-argument)
+    (define-key map (kbd "4") #'digit-argument)
+    (define-key map (kbd "5") #'digit-argument)
+    (define-key map (kbd "6") #'digit-argument)
+    (define-key map (kbd "7") #'digit-argument)
+    (define-key map (kbd "8") #'digit-argument)
+    (define-key map (kbd "9") #'digit-argument)
+    map))
+
+(dolist (cmd '(forward-char
+               forward-word
+               backward-char
+               backward-word
+               next-line
+               previous-line
+               kill-line
+               kill-ring-save
+               set-mark-command
+               undo
+               move-beginning-of-line
+               move-end-of-line
+               delete-char
+               yank))
+  (put cmd 'repeat-map 'my-basic-repeat-map))
+
 ;;; Provide feature
 (provide 'init-navigation)
 
