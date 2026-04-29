@@ -96,6 +96,7 @@
 
     ;; Editing
     (define-key map (kbd "d") #'delete-char)
+    (define-key map (kbd "t") #'transpose-chars)
     (define-key map (kbd "k") #'kill-line)
     (define-key map (kbd "w") #'kill-region)
     (define-key map (kbd "c") #'kill-ring-save)
