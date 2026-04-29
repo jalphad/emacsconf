@@ -116,6 +116,9 @@
   ;; of stopping at the edge of the list.
   (setq corfu-cycle t)
 
+  ;; Never quit at completion boundary, required for snippet completions.
+  (setq corfu-quit-at-boundary nil)
+  
   ;; Don't show a live preview of the selected candidate inside the buffer —
   ;; it can be distracting while you are still typing.
   (setq corfu-preview-current nil)
@@ -147,6 +150,15 @@
     (setq completion-category-overrides
           '((eglot (styles orderless))
             (eglot-capf (styles orderless))))))
+
+;; ----------------------------------------------------------------------------
+;; Yasnippet - snippet completions
+;; ----------------------------------------------------------------------------
+
+(use-package yasnippet
+  :ensure t
+  :config
+  (yas-global-mode 1))
 
 ;; ----------------------------------------------------------------------------
 ;; Cape — additional completion-at-point backends for Corfu

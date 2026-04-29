@@ -35,13 +35,21 @@
   :ensure nil ; built-in since Emacs 29
   :mode "\\.go\\'"  ; open .go files in go-ts-mode automatically
   :hook
+  ;; Yasnippet minor mode
+  (go-ts-mode . yas-minor-mode)
+
   ;; Start the LSP server (gopls) as soon as a Go buffer opens.
   (go-ts-mode . eglot-ensure)
+  
   ;; Go mandates tabs for indentation. Override the global spaces default
   ;; set in init-defaults.el.
   (go-ts-mode . (lambda ()
                   (setq indent-tabs-mode t)
-                  (setq tab-width 4)))
+                  (setq tab-width 4)
+                  (setq-local completion-at-point-functions
+                                     (list (cape-capf-super
+                                            #'eglot-completion-at-point
+                                            #'yasnippet-capf)))))
   :config
   ;; Tell Emacs that .go files should use go-ts-mode (belt-and-suspenders
   ;; alongside the :mode keyword above).
@@ -69,21 +77,32 @@
   ;; settings. These mirror gopls' settings documented at:
   ;; https://github.com/golang/tools/blob/master/gopls/doc/settings.md
   (setq-default eglot-workspace-configuration
-                '(:gopls
-                  ( ;; Enable more detailed analysis passes beyond the default.
-                   :analyses (:unusedparams t
-                              :unusedvariable t
-                              :unusedwrite t
-                              :shadow t)
-                   ;; Show inlay hints for parameter names and type info.
-                   ;; Toggle live with M-x eglot-inlay-hints-mode.
-                   :hints (:parameterNames t
-                           :assignVariableTypes t
-                           :compositeLiteralFields t)
-                   ;; Use goimports instead of gofmt so missing imports are
-                   ;; added and unused ones removed on save (via apheleia below).
-                   :gofumpt t))) ; set t if you prefer gofumpt style
-
+                '((:gopls . (;; --- Snippets & Completion ---
+                             ;; Enables placeholders in function signatures (e.g., func(name string)).
+                             ;; This is crucial for Yasnippet integration.
+                             :usePlaceholders t
+                             ;; Allows gopls to suggest symbols from packages you haven't imported yet.
+                             :completeUnimported t
+                             
+                             ;; --- Code Analysis ---
+                             ;; Detailed analysis passes for catching logic errors.
+                             :analyses (:unusedparams t      ; Warn about unused function parameters
+                                                      :unusedvariable t    ; Warn about variables declared but not used
+                                                      :unusedwrite t       ; Warn about writes to variables that are never read
+                                                      :shadow t)           ; Warn when a variable shadows one in an outer scope
+                             
+                             ;; --- Inlay Hints ---
+                             ;; Visual annotations in the editor (Toggle with M-x eglot-inlay-hints-mode).
+                             :hints (:parameterNames t            ; Show parameter names in function calls
+                                                     :assignVariableTypes t       ; Show inferred types for variable assignments
+                                                     :compositeLiteralFields t)   ; Show field names in struct literals
+                             
+                             ;; --- Formatting & Linting ---
+                             ;; Uses gofumpt (a stricter gofmt) for formatting if installed.
+                             :gofumpt t
+                             ;; Runs staticcheck.io linters for even deeper code analysis.
+                             :staticcheck t))))
+  
   ;; Shut down the gopls server when the last Go buffer is closed rather than
   ;; keeping it alive forever in the background.
   (setq eglot-autoshutdown t)
@@ -172,18 +191,18 @@
                  :args []))
   ;; dlv is the regular debug config
   (add-to-list 'dape-configs
-             `(dlv
-               modes (go-ts-mode)
-               command "dlv"
-               command-args ("dap" "--listen" "127.0.0.1:55879") ; different port
-               command-cwd dape-command-cwd
-               host "127.0.0.1"
-               port 55879
-               :type "go"
-               :request "launch"
-               :mode "debug"
-               :program "."
-               :args []))
+               `(dlv
+                 modes (go-ts-mode)
+                 command "dlv"
+                 command-args ("dap" "--listen" "127.0.0.1:55879") ; different port
+                 command-cwd dape-command-cwd
+                 host "127.0.0.1"
+                 port 55879
+                 :type "go"
+                 :request "launch"
+                 :mode "debug"
+                 :program "."
+                 :args []))
   
   :bind
   (("C-c b b" . dape-breakpoint-toggle)   ; C-c b b — toggle breakpoint    
@@ -239,8 +258,8 @@
   :bind (:map go-ts-mode-map
               ("C-c g a" . go-tag-add)    ; add tags to struct field(s)
               ("C-c g r" . go-tag-remove) ; remove tags from struct field(s)
-  :config
-  (setq go-tag-args (list "-transform" "camelcase"))))
+              :config
+              (setq go-tag-args (list "-transform" "camelcase"))))
 
 ;; ----------------------------------------------------------------------------
 ;; Treemacs integration — show Go project structure cleanly
@@ -794,7 +813,7 @@ instead of a plain test run."
                                       (substring-no-properties run-regex)))))
       (message "Debugging: %s" run-regex)
       (dape config))))
-    
+
 ;;; provide the feature so (require 'init-go) works from init.el
 (provide 'init-go)
 
