@@ -93,12 +93,28 @@
 ;; prefix if no single candidate is selected yet).
 (use-package corfu
   :hook (after-init . global-corfu-mode)
-  :bind (:map corfu-map
+  :bind (:map corfu-mode-map
+              ;; TAB selects the current candidate (completes the common prefix
+              ;; on first press, then the full candidate on second).
               ("<tab>" . corfu-complete))
   :config
   ;; Pressing TAB in a buffer first tries to indent; if the line is already
   ;; correctly indented it triggers completion instead.
   (setq tab-always-indent 'complete)
+
+  ;; Automatically pop up the completion menu while typing — without this
+  ;; you only get completions on explicit C-M-i / TAB.
+  (setq corfu-auto t)
+  ;; Seconds of idle time before the popup appears. Lower = more responsive,
+  ;; higher = less interruption while you are still thinking.
+  (setq corfu-auto-delay 0.2)
+  ;; Minimum number of characters typed before auto-completion triggers.
+  ;; Keeps the popup from firing on every single keystroke.
+  (setq corfu-auto-prefix 2)
+
+  ;; Wrap around when navigating past the first or last candidate, instead
+  ;; of stopping at the edge of the list.
+  (setq corfu-cycle t)
 
   ;; Don't show a live preview of the selected candidate inside the buffer —
   ;; it can be distracting while you are still typing.
@@ -107,10 +123,14 @@
   ;; Minimum popup width so it doesn't collapse on short completions.
   (setq corfu-min-width 20)
 
+  ;; Dismiss the popup when no candidates match the current input, but only
+  ;; after a separator (e.g. a space) has been typed — avoids phantom popups
+  ;; while still letting you type past a completed word.
+  (setq corfu-quit-no-match 'separator)
+
   ;; Delay before the documentation popup appears alongside the candidate
   ;; list: (seconds-when-moving . seconds-on-first-open).
   (setq corfu-popupinfo-delay '(1.25 . 0.5))
-
   ;; corfu-popupinfo shows the docstring / type signature of the highlighted
   ;; candidate in a secondary popup. Very useful for Go method signatures.
   (corfu-popupinfo-mode t)
@@ -119,7 +139,14 @@
   ;; corfu-history records selections; savehist persists them to disk.
   (with-eval-after-load 'savehist
     (corfu-history-mode t)
-    (add-to-list 'savehist-additional-variables 'corfu-history)))
+    (add-to-list 'savehist-additional-variables 'corfu-history))
+
+  ;; When orderless is loaded, opt eglot completions into fuzzy/flex matching
+  ;; so you can type fragments against gopls results rather than strict prefixes.
+  (with-eval-after-load 'orderless
+    (setq completion-category-overrides
+          '((eglot (styles orderless))
+            (eglot-capf (styles orderless))))))
 
 ;; ----------------------------------------------------------------------------
 ;; Cape — additional completion-at-point backends for Corfu

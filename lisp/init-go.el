@@ -196,7 +196,7 @@
    ("C-c b q" . dape-quit)                ; C-c b q — end session          
    ("C-c b e" . dape-eval)                ; C-c b e — eval expression      
    ("C-c b l" . dape-repl)                ; C-c b l — open REPL
-   ("C-c b w" . my-go-restore-windows)))  ; C-c b w — open REPL
+   ("C-c b w" . my-go-restore-windows)))  ; C-c b w — restore windows
 
 (defvar my-go--pre-debug-window-config nil
   "Window configuration saved before a dape debug session starts.")
