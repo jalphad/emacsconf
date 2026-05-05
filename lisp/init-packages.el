@@ -12,7 +12,7 @@
 
 (require 'package)
 
-;; Add MELPA to the list of archives. GNU ELPA is included by default.
+;; Add MELPA to the list of archives. (non)-GNU ELPA is included by default.
 ;; MELPA Stable (melpa-stable.milkbox.net) is an alternative if you prefer
 ;; only release-tagged packages, but plain MELPA has much broader coverage.
 (add-to-list 'package-archives

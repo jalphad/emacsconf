@@ -113,6 +113,7 @@
     (define-key map (kbd "7") #'digit-argument)
     (define-key map (kbd "8") #'digit-argument)
     (define-key map (kbd "9") #'digit-argument)
+    (define-key map (kbd "0") #'digit-argument)
     map))
 
 (dolist (cmd '(forward-char

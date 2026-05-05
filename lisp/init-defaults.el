@@ -57,7 +57,7 @@
 ;; Enable repeat-mode
 (repeat-mode 1)
 ;; Exit by pressing Return
-(setq repeat-exit-key "RET")
+(setq repeat-exit-key "q")
 
 ;; Visual indicator in mode line that repeat is active
 (setq repeat-echo-function #'repeat-echo-mode-line)

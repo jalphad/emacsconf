@@ -56,7 +56,7 @@
   (all-the-icons-completion-mode t))
 
 ;; ----------------------------------------------------------------------------
-;; Theme — doom-themes
+;; Theme — idea-darkula-theme
 ;; ----------------------------------------------------------------------------
 
 ;; doom-themes is a large collection of well-maintained themes. We load
@@ -68,7 +68,7 @@
   :config
   (setq doom-themes-enable-bold t
         doom-themes-enable-italic t)
-  (load-theme 'doom-horizon t)
+  (load-theme 'doom-one t)
 
   ;; Correct the org-mode heading colours that some themes get wrong.
   (doom-themes-org-config))
@@ -195,7 +195,7 @@
 ;; ----------------------------------------------------------------------------
 
 (use-package treemacs
-  :defer t ; Load only when first used, not at startup
+  :ensure t
   :config
   ;; Never let Emacs select the Treemacs window with `other-window' (C-x o).
   ;; You interact with Treemacs explicitly via F5, not by accident.
@@ -222,6 +222,15 @@
   ;; already open.
   :bind
   ("<f5>" . treemacs))
+
+;; Load projectile package
+(use-package projectile
+  :ensure t)
+
+;; Treemacs/Projectile integration
+(use-package treemacs-projectile
+  :after (treemacs projectile)
+  :ensure t)
 
 ;; ----------------------------------------------------------------------------
 ;; Dashboard — a useful startup screen
@@ -269,7 +278,7 @@
 ;; bottom. Side windows are excluded from golden-ratio resizing by design
 ;; and stay at a fixed height regardless of which window has focus.
 (add-to-list 'display-buffer-alist
-             '("\\*\\(Help\\|describe-char\\|Apropos\\|eldoc\\|xref\\|Flymake\\|compilation\\|Messages\\|Embark Actions\\)\\*"
+             '("\\*\\(Help\\|describe-char\\|Apropos\\|eldoc\\|xref\\|Flymake.*\\|compilation\\|Messages\\|Embark Actions\\|Go Test\\)\\*"
                (display-buffer-reuse-window
                 display-buffer-in-side-window)
                (side . bottom)
