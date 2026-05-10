@@ -57,44 +57,6 @@
   ;; Tell Emacs that .go files should use go-ts-mode (belt-and-suspenders
   ;; alongside the :mode keyword above).
   (add-to-list 'major-mode-remap-alist '(go-mode . go-ts-mode))
-
-  ;; Integrate with eglot
-  ;; Pass extra configuration to gopls via the initializationOptions workspace
-  ;; settings. These mirror gopls' settings documented at:
-  ;; https://github.com/golang/tools/blob/master/gopls/doc/settings.md
-  (with-eval-after-load 'eglot
-    (connection-local-set-profile-variables
-     'eglot-gopls
-     '((eglot-workspace-configuration
-        '((:gopls . (;; --- Snippets & Completion ---
-                     ;; Enables placeholders in function signatures (e.g., func(name string)).
-                     ;; This is crucial for Yasnippet integration.
-                     :usePlaceholders t
-                     ;; Allows gopls to suggest symbols from packages you haven't imported yet.
-                     :completeUnimported t
-                     
-                     ;; --- Code Analysis ---
-                     ;; Detailed analysis passes for catching logic errors.
-                     :analyses (:unusedparams t      ; Warn about unused function parameters
-                                              :unusedvariable t    ; Warn about variables declared but not used
-                                              :unusedwrite t       ; Warn about writes to variables that are never read
-                                              :shadow t)           ; Warn when a variable shadows one in an outer scope
-                     
-                     ;; --- Inlay Hints ---
-                     ;; Visual annotations in the editor (Toggle with M-x eglot-inlay-hints-mode).
-                     :hints (:parameterNames t            ; Show parameter names in function calls
-                                             :assignVariableTypes t       ; Show inferred types for variable assignments
-                                             :compositeLiteralFields t)   ; Show field names in struct literals
-                     
-                     ;; --- Formatting & Linting ---
-                     ;; We use apheleia for formatting instead of eglot/gopls
-                     ;; :gofumpt t
-                     ;; Runs staticcheck.io linters for even deeper code analysis.
-                     :staticcheck t))))))
-
-    (connection-local-set-profiles
-     '(:application eglot :protocol lsp :server-info (:name "gopls"))
-     'eglot-gopls))
   
   ;; We use apheleia with goimports and gofumpt formatters in go-ts-mode
   (with-eval-after-load 'apheleia

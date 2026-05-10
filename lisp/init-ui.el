@@ -56,22 +56,24 @@
   (all-the-icons-completion-mode t))
 
 ;; ----------------------------------------------------------------------------
-;; Theme — idea-darkula-theme
+;; Theme — Intellij Islands Dark (custom theme)
 ;; ----------------------------------------------------------------------------
 
-;; doom-themes is a large collection of well-maintained themes. We load
-;; shades-of-purple, a vibrant dark theme with purple accents.
-;;
-;; treacle-bold / treacle-italic tweak heading rendering across modes;
-;; enable both for a richer look.
-(use-package doom-themes
-  :config
-  (setq doom-themes-enable-bold t
-        doom-themes-enable-italic t)
-  (load-theme 'doom-one t)
+(load-theme 'intellij-islands-dark t)
 
-  ;; Correct the org-mode heading colours that some themes get wrong.
-  (doom-themes-org-config))
+;; ;; doom-themes is a large collection of well-maintained themes. We load
+;; ;; shades-of-purple, a vibrant dark theme with purple accents.
+;; ;;
+;; ;; treacle-bold / treacle-italic tweak heading rendering across modes;
+;; ;; enable both for a richer look.
+;; (use-package doom-themes
+;;   :config
+;;   (setq doom-themes-enable-bold t
+;;         doom-themes-enable-italic t)
+;;   (load-theme 'doom-one t)
+
+;;   ;; Correct the org-mode heading colours that some themes get wrong.
+;;   (doom-themes-org-config))
 
 ;; ----------------------------------------------------------------------------
 ;; Solaire-mode — visually distinguish "real" file buffers
@@ -95,12 +97,12 @@
   :config
   (setq spacious-padding-widths
         '(:internal-border-width 15   ; gap between the frame edge and content
-          :header-line-width     4
-          :mode-line-width       4    ; thicker modeline separator
-          :tab-width             4
-          :right-divider-width   1    ; thin line between side-by-side windows
-          :scroll-bar-width      0    ; hide scroll bars (we use line numbers)
-          :fringe-width          8))
+                                 :header-line-width     4
+                                 :mode-line-width       4    ; thicker modeline separator
+                                 :tab-width             4
+                                 :right-divider-width   1    ; thin line between side-by-side windows
+                                 :scroll-bar-width      0    ; hide scroll bars (we use line numbers)
+                                 :fringe-width          8))
   (spacious-padding-mode t))
 
 ;; ----------------------------------------------------------------------------
@@ -265,6 +267,8 @@
         ;; Centre all dashboard content horizontally.
         dashboard-center-content      t)
 
+  (setq initial-buffer-choice (lambda () (get-buffer "*dashboard*")))
+
   (dashboard-setup-startup-hook))
 
 ;; ----------------------------------------------------------------------------
@@ -278,7 +282,7 @@
 ;; bottom. Side windows are excluded from golden-ratio resizing by design
 ;; and stay at a fixed height regardless of which window has focus.
 (add-to-list 'display-buffer-alist
-             '("\\*\\(Help\\|describe-char\\|Apropos\\|eldoc\\|xref\\|Flymake.*\\|compilation\\|Messages\\|Embark Actions\\|Go Test\\)\\*"
+             '("\\*\\(Help\\|describe-char\\|Apropos\\|eldoc\\|xref\\|Flymake.*\\|compilation\\|Messages\\|Embark Actions\\|Go Test\\|terminal\\)\\*"
                (display-buffer-reuse-window
                 display-buffer-in-side-window)
                (side . bottom)

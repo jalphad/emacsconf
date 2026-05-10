@@ -14,7 +14,8 @@
 ;;   - hover documentation (eldoc, shown in the echo area or a child frame)
 
 (use-package eglot
-  :ensure nil ; built-in
+  :ensure t ; don't use the bundled version but pull latest from GNU Elpa
+  :pin gnu
   ;; :hook (go-ts-mode . eglot-ensure)
   ;; :after go-ts-mode
   :config
@@ -25,7 +26,17 @@
   ;; Show all of eldoc's information (hover docs, signature, diagnostics)
   ;; rather than truncating to one line in the echo area.
   (setq eldoc-echo-area-use-multiline-p nil) ; keep echo area clean ...
-  
+
+  ;; Enable semantic token highlighting in all eglot-managed buffers
+  (add-hook 'eglot-managed-mode-hook #'eglot-semantic-tokens-mode)
+
+  ;; Integrate gopls with eglot
+  ;; Pass extra configuration to gopls via the initializationOptions workspace
+  ;; settings. These mirror gopls' settings documented at:
+  ;; https://github.com/golang/tools/blob/master/gopls/doc/settings.md  
+  (setq-default eglot-workspace-configuration
+                (my/gopls-workspace-configuration))
+
   ;; ... and use eldoc-box for a floating child-frame doc popup instead.
   ;; Remove this block if you prefer the echo area.
   :bind (:map eglot-mode-map
@@ -37,11 +48,62 @@
               ("M-,"     . xref-pop-marker-stack)   ; jump back
               ("M-?"     . xref-find-references)))  ; find all references
 
+;; (with-eval-after-load 'eglot
+;;   (add-hook 'eglot-managed-mode-hook
+;;             (lambda ()
+;;               ;; Type at definition site: use default text color, not purple
+;;               (set-face-attribute 'eglot-semantic-type/definition nil
+;;                                   :foreground (face-attribute 'default :foreground nil t)
+;;                                   :inherit nil)
+;;               ;; Function at definition site: use func-def color (bold blue)
+;;               (set-face-attribute 'eglot-semantic-function/definition nil
+;;                                   :foreground (face-attribute 'font-lock-function-name-face
+;;                                                               :foreground nil t)
+;;                                   :weight 'bold
+;;                                   :inherit nil))))
+
+;; (custom-set-faces
+;;  '(eglot-inlay-hint-face ((t (:foreground "#7a8799" :slant italic :height 0.80))))
+;;  '(eglot-type-hint-face  ((t (:inherit eglot-inlay-hint-face :foreground "#7a8799"))))
+;;  '(eglot-parameter-hint-face ((t (:inherit eglot-inlay-hint-face :foreground "#7a8799")))))
+
 ;; eldoc-box renders the hover documentation in a neat child frame rather
 ;; than the cramped echo area. Works with any eldoc provider, including eglot.
 (use-package eldoc-box
   :after eglot
   :hook (eglot-managed-mode . eldoc-box-hover-mode))
+
+;; Gopls configuration for eglot needs to be set globally, otherwise it won't be loaded correctly
+(defun my/gopls-workspace-configuration ()
+  ;; Returns gopls workspace configuration for eglot.
+  '((:gopls . (;; --- Snippets & Completion ---
+               ;; Enables placeholders in function signatures (e.g., func(name string)).
+               ;; This is crucial for Yasnippet integration.
+               :usePlaceholders t
+               ;; Allows gopls to suggest symbols from packages you haven't imported yet.
+               :completeUnimported t
+               ;; Return semantic tokens for syntax highlighting
+               :semanticTokens t
+
+               ;; --- Code Analysis ---
+               ;; Detailed analysis passes for catching logic errors.
+               :analyses (:unusedparams t      ; Warn about unused function parameters
+                                        :unusedvariable t    ; Warn about variables declared but not used
+                                        :unusedwrite t       ; Warn about writes to variables that are never read
+                                        :shadow t)           ; Warn when a variable shadows one in an outer scope
+
+               ;; --- Inlay Hints ---
+               ;; Visual annotations in the editor (Toggle with M-x eglot-inlay-hints-mode).
+               :hints (:parameterNames t            ; Show parameter names in function calls
+                                       :assignVariableTypes t       ; Show inferred types for variable assignments
+                                       :compositeLiteralFields t)   ; Show field names in struct literals
+
+               ;; --- Formatting & Linting ---
+               ;; We use apheleia for formatting instead of eglot/gopls
+               ;; :gofumpt t
+               ;; Runs staticcheck.io linters for even deeper code analysis.
+               :staticcheck t)))
+  )
 
 ;; ----------------------------------------------------------------------------
 ;; Apheleia — non-blocking, asynchronous code formatting

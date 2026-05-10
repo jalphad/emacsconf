@@ -2,6 +2,9 @@
 (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
 (add-to-list 'load-path (expand-file-name "lisp/ide/" user-emacs-directory))
 
+;; Add custom themes load path
+(add-to-list 'custom-theme-load-path (expand-file-name "themes" user-emacs-directory))
+
 ;; Bootstrap package manager (e.g. straight.el or elpaca)
 (require 'init-packages)
 
