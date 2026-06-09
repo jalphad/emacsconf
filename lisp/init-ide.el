@@ -2,6 +2,7 @@
 
 (require 'ide-common)
 (require 'ide-go)
+(require 'ide-data)
 ;; (require 'ide-python)
 ;; (require 'ide-rust)
 

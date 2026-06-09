@@ -13,6 +13,37 @@
 ;;   - code actions (M-x eglot-code-actions) — e.g. fill struct, add import
 ;;   - hover documentation (eldoc, shown in the echo area or a child frame)
 
+;; Gopls configuration for eglot needs to be defined before eglot loads.
+(defun my/gopls-workspace-configuration ()
+  "Return gopls workspace configuration for eglot."
+  '((:gopls . (;; --- Snippets & Completion ---
+               ;; Enables placeholders in function signatures (e.g., func(name string)).
+               ;; This is crucial for Yasnippet integration.
+               :usePlaceholders t
+               ;; Allows gopls to suggest symbols from packages you haven't imported yet.
+               :completeUnimported t
+               ;; Return semantic tokens for syntax highlighting
+               :semanticTokens t
+
+               ;; --- Code Analysis ---
+               ;; Detailed analysis passes for catching logic errors.
+               :analyses (:unusedparams t      ; Warn about unused function parameters
+                                        :unusedvariable t    ; Warn about variables declared but not used
+                                        :unusedwrite t       ; Warn about writes to variables that are never read
+                                        :shadow t)           ; Warn when a variable shadows one in an outer scope
+
+               ;; --- Inlay Hints ---
+               ;; Visual annotations in the editor (Toggle with M-x eglot-inlay-hints-mode).
+               :hints (:parameterNames t            ; Show parameter names in function calls
+                                       :assignVariableTypes t       ; Show inferred types for variable assignments
+                                       :compositeLiteralFields t)   ; Show field names in struct literals
+
+               ;; --- Formatting & Linting ---
+               ;; We use apheleia for formatting instead of eglot/gopls
+               ;; :gofumpt t
+               ;; Runs staticcheck.io linters for even deeper code analysis.
+               :staticcheck t))))
+
 (use-package eglot
   :ensure t ; don't use the bundled version but pull latest from GNU Elpa
   :pin gnu
@@ -72,38 +103,6 @@
 (use-package eldoc-box
   :after eglot
   :hook (eglot-managed-mode . eldoc-box-hover-mode))
-
-;; Gopls configuration for eglot needs to be set globally, otherwise it won't be loaded correctly
-(defun my/gopls-workspace-configuration ()
-  ;; Returns gopls workspace configuration for eglot.
-  '((:gopls . (;; --- Snippets & Completion ---
-               ;; Enables placeholders in function signatures (e.g., func(name string)).
-               ;; This is crucial for Yasnippet integration.
-               :usePlaceholders t
-               ;; Allows gopls to suggest symbols from packages you haven't imported yet.
-               :completeUnimported t
-               ;; Return semantic tokens for syntax highlighting
-               :semanticTokens t
-
-               ;; --- Code Analysis ---
-               ;; Detailed analysis passes for catching logic errors.
-               :analyses (:unusedparams t      ; Warn about unused function parameters
-                                        :unusedvariable t    ; Warn about variables declared but not used
-                                        :unusedwrite t       ; Warn about writes to variables that are never read
-                                        :shadow t)           ; Warn when a variable shadows one in an outer scope
-
-               ;; --- Inlay Hints ---
-               ;; Visual annotations in the editor (Toggle with M-x eglot-inlay-hints-mode).
-               :hints (:parameterNames t            ; Show parameter names in function calls
-                                       :assignVariableTypes t       ; Show inferred types for variable assignments
-                                       :compositeLiteralFields t)   ; Show field names in struct literals
-
-               ;; --- Formatting & Linting ---
-               ;; We use apheleia for formatting instead of eglot/gopls
-               ;; :gofumpt t
-               ;; Runs staticcheck.io linters for even deeper code analysis.
-               :staticcheck t)))
-  )
 
 ;; ----------------------------------------------------------------------------
 ;; Apheleia — non-blocking, asynchronous code formatting
