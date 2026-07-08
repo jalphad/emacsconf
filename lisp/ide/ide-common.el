@@ -14,39 +14,44 @@
 ;;   - hover documentation (eldoc, shown in the echo area or a child frame)
 
 ;; Gopls configuration for eglot needs to be defined before eglot loads.
+(defun my/gopls-settings ()
+  "Return gopls settings shared by initialization and workspace configuration."
+  '(;; --- Snippets & Completion ---
+    ;; Enables placeholders in function signatures (e.g., func(name string)).
+    ;; This is crucial for Yasnippet integration.
+    :usePlaceholders t
+    ;; Allows gopls to suggest symbols from packages you haven't imported yet.
+    :completeUnimported t
+    ;; Ask gopls to advertise semantic token support during initialization.
+    :semanticTokens t
+
+    ;; --- Code Analysis ---
+    ;; Detailed analysis passes for catching logic errors.
+    :analyses (:unusedparams t      ; Warn about unused function parameters
+                             :unusedvariable t    ; Warn about variables declared but not used
+                             :unusedwrite t       ; Warn about writes to variables that are never read
+                             :shadow t)           ; Warn when a variable shadows one in an outer scope
+
+    ;; --- Inlay Hints ---
+    ;; Visual annotations in the editor (Toggle with M-x eglot-inlay-hints-mode).
+    :hints (:parameterNames t            ; Show parameter names in function calls
+                            :assignVariableTypes t       ; Show inferred types for variable assignments
+                            :compositeLiteralFields t)   ; Show field names in struct literals
+
+    ;; --- Formatting & Linting ---
+    ;; We use apheleia for formatting instead of eglot/gopls
+    ;; :gofumpt t
+    ;; Runs staticcheck.io linters for even deeper code analysis.
+    :staticcheck t))
+
 (defun my/gopls-workspace-configuration ()
   "Return gopls workspace configuration for eglot."
-  '((:gopls . (;; --- Snippets & Completion ---
-               ;; Enables placeholders in function signatures (e.g., func(name string)).
-               ;; This is crucial for Yasnippet integration.
-               :usePlaceholders t
-               ;; Allows gopls to suggest symbols from packages you haven't imported yet.
-               :completeUnimported t
-               ;; Return semantic tokens for syntax highlighting
-               :semanticTokens t
-
-               ;; --- Code Analysis ---
-               ;; Detailed analysis passes for catching logic errors.
-               :analyses (:unusedparams t      ; Warn about unused function parameters
-                                        :unusedvariable t    ; Warn about variables declared but not used
-                                        :unusedwrite t       ; Warn about writes to variables that are never read
-                                        :shadow t)           ; Warn when a variable shadows one in an outer scope
-
-               ;; --- Inlay Hints ---
-               ;; Visual annotations in the editor (Toggle with M-x eglot-inlay-hints-mode).
-               :hints (:parameterNames t            ; Show parameter names in function calls
-                                       :assignVariableTypes t       ; Show inferred types for variable assignments
-                                       :compositeLiteralFields t)   ; Show field names in struct literals
-
-               ;; --- Formatting & Linting ---
-               ;; We use apheleia for formatting instead of eglot/gopls
-               ;; :gofumpt t
-               ;; Runs staticcheck.io linters for even deeper code analysis.
-               :staticcheck t))))
+  `(:gopls ,(my/gopls-settings)))
 
 (use-package eglot
   :ensure t ; don't use the bundled version but pull latest from GNU Elpa
   :pin gnu
+  :demand t
   ;; :hook (go-ts-mode . eglot-ensure)
   ;; :after go-ts-mode
   :config
@@ -58,13 +63,15 @@
   ;; rather than truncating to one line in the echo area.
   (setq eldoc-echo-area-use-multiline-p nil) ; keep echo area clean ...
 
-  ;; Enable semantic token highlighting in all eglot-managed buffers
-  (add-hook 'eglot-managed-mode-hook #'eglot-semantic-tokens-mode)
-
   ;; Integrate gopls with eglot
-  ;; Pass extra configuration to gopls via the initializationOptions workspace
-  ;; settings. These mirror gopls' settings documented at:
+  ;; Pass semantic token configuration during initialization so gopls advertises
+  ;; the semantic token provider before Eglot decides which modes to enable.
+  ;; These mirror gopls' settings documented at:
   ;; https://github.com/golang/tools/blob/master/gopls/doc/settings.md  
+  (add-to-list 'eglot-server-programs
+               `((go-mode go-dot-mod-mode go-dot-work-mode
+                          go-ts-mode go-mod-ts-mode go-work-ts-mode)
+                 . ("gopls" :initializationOptions ,(my/gopls-settings))))
   (setq-default eglot-workspace-configuration
                 (my/gopls-workspace-configuration))
 

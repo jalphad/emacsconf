@@ -136,6 +136,79 @@
 ;; Meow - Modal editing
 ;; ----------------------------------------------------------------------------
 
+(defun my/meow-expand-selection-p ()
+  "Return non-nil when the current Meow selection is expandable."
+  (eq 'expand (car-safe (meow--selection-type))))
+
+(defun my/meow-coerce-expand-selection (type)
+  "Coerce the current expandable Meow selection to TYPE."
+  (when (and (my/meow-expand-selection-p) meow--selection)
+    (setcar meow--selection (cons 'expand type))))
+
+(defun my/meow-expand-type-for-thing (thing)
+  "Return the default expansion type for THING."
+  (if (memq thing '(line visual-line))
+      'line
+    'word))
+
+(defun my/meow-coerce-thing-selection (thing)
+  "Make the current Meow thing selection expandable for THING."
+  (when (and meow--selection (car meow--selection))
+    (setcar meow--selection
+            (cons 'expand (my/meow-expand-type-for-thing thing)))))
+
+(defun my/meow-beginning-of-thing (thing)
+  "Select to the beginning of THING as an expandable selection."
+  (interactive (list (meow-thing-prompt "Beginning of: ")))
+  (meow-beginning-of-thing thing)
+  (my/meow-coerce-thing-selection
+   (cdr (assoc thing meow-char-thing-table))))
+
+(defun my/meow-end-of-thing (thing)
+  "Select to the end of THING as an expandable selection."
+  (interactive (list (meow-thing-prompt "End of: ")))
+  (meow-end-of-thing thing)
+  (my/meow-coerce-thing-selection
+   (cdr (assoc thing meow-char-thing-table))))
+
+(defun my/meow-inner-of-thing (thing)
+  "Select inner THING as an expandable selection."
+  (interactive (list (meow-thing-prompt "Inner of: ")))
+  (meow-inner-of-thing thing)
+  (my/meow-coerce-thing-selection
+   (cdr (assoc thing meow-char-thing-table))))
+
+(defun my/meow-bounds-of-thing (thing)
+  "Select bounds of THING as an expandable selection."
+  (interactive (list (meow-thing-prompt "Bounds of: ")))
+  (meow-bounds-of-thing thing)
+  (my/meow-coerce-thing-selection
+   (cdr (assoc thing meow-char-thing-table))))
+
+(defun my/meow-next-word (n)
+  "Move to the next word, or expand an expandable selection by word."
+  (interactive "p")
+  (my/meow-coerce-expand-selection 'word)
+  (meow-next-word n))
+
+(defun my/meow-back-word (n)
+  "Move to the previous word, or expand an expandable selection by word."
+  (interactive "p")
+  (my/meow-coerce-expand-selection 'word)
+  (meow-back-word n))
+
+(defun my/meow-next-symbol (n)
+  "Move to the next symbol, or expand an expandable selection by symbol."
+  (interactive "p")
+  (my/meow-coerce-expand-selection 'symbol)
+  (meow-next-symbol n))
+
+(defun my/meow-back-symbol (n)
+  "Move to the previous symbol, or expand an expandable selection by symbol."
+  (interactive "p")
+  (my/meow-coerce-expand-selection 'symbol)
+  (meow-back-symbol n))
+
 (defun meow-setup ()
   (setq meow-cheatsheet-layout meow-cheatsheet-layout-qwerty)
   (meow-motion-define-key
@@ -169,19 +242,19 @@
    '("1" . meow-expand-1)
    '("-" . negative-argument)
    '(";" . meow-reverse)
-   '("," . meow-inner-of-thing)
-   '("." . meow-bounds-of-thing)
-   '("[" . meow-beginning-of-thing)
-   '("]" . meow-end-of-thing)
+   '("," . my/meow-inner-of-thing)
+   '("." . my/meow-bounds-of-thing)
+   '("[" . my/meow-beginning-of-thing)
+   '("]" . my/meow-end-of-thing)
    '("a" . meow-append)
    '("A" . meow-open-below)
-   '("b" . meow-back-word)
-   '("B" . meow-back-symbol)
+   '("b" . my/meow-back-word)
+   '("B" . my/meow-back-symbol)
    '("c" . meow-change)
    '("d" . meow-delete)
    '("D" . meow-backward-delete)
-   '("e" . meow-next-word)
-   '("E" . meow-next-symbol)
+   '("e" . my/meow-next-word)
+   '("E" . my/meow-next-symbol)
    '("f" . meow-find)
    '("g" . meow-cancel-selection)
    '("G" . meow-grab)
@@ -212,7 +285,7 @@
    '("w" . meow-mark-word)
    '("W" . meow-mark-symbol)
    '("x" . meow-line)
-   '("X" . meow-goto-line)
+   '("X" . meow-line-expand)
    '("y" . meow-save)
    '("Y" . meow-sync-grab)
    '("z" . meow-pop-selection)

@@ -92,17 +92,17 @@
     (puthash my/data-kubernetes-schema-url my/data-kubernetes-file-patterns yaml-schemas)
     (puthash my/data-github-actions-schema-url my/data-github-actions-file-patterns yaml-schemas)
     (puthash my/data-docker-compose-schema-url my/data-docker-compose-file-patterns yaml-schemas)
-    `((:json . (:validate (:enable t)
-                :schemaStore (:enable t)
-                :schemas [(:name "OpenAPI 3.1"
-                           :url ,my/data-openapi-schema-url
-                           :fileMatch ,my/data-openapi-file-patterns)]))
-      (:yaml . (:validate t
-                :hover t
-                :completion t
-                :format (:enable nil)
-                :schemaStore (:enable t)
-                :schemas ,yaml-schemas)))))
+    `(:json (:validate (:enable t)
+             :schemaStore (:enable t)
+             :schemas [(:name "OpenAPI 3.1"
+                        :url ,my/data-openapi-schema-url
+                        :fileMatch ,my/data-openapi-file-patterns)])
+      :yaml (:validate t
+             :hover t
+             :completion t
+             :format (:enable nil)
+             :schemaStore (:enable t)
+             :schemas ,yaml-schemas))))
 
 (defun my/data--server-executable ()
   "Return the expected language-server executable for the current data mode."
