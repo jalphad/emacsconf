@@ -86,25 +86,6 @@
               ("M-,"     . xref-pop-marker-stack)   ; jump back
               ("M-?"     . xref-find-references)))  ; find all references
 
-;; (with-eval-after-load 'eglot
-;;   (add-hook 'eglot-managed-mode-hook
-;;             (lambda ()
-;;               ;; Type at definition site: use default text color, not purple
-;;               (set-face-attribute 'eglot-semantic-type/definition nil
-;;                                   :foreground (face-attribute 'default :foreground nil t)
-;;                                   :inherit nil)
-;;               ;; Function at definition site: use func-def color (bold blue)
-;;               (set-face-attribute 'eglot-semantic-function/definition nil
-;;                                   :foreground (face-attribute 'font-lock-function-name-face
-;;                                                               :foreground nil t)
-;;                                   :weight 'bold
-;;                                   :inherit nil))))
-
-;; (custom-set-faces
-;;  '(eglot-inlay-hint-face ((t (:foreground "#7a8799" :slant italic :height 0.80))))
-;;  '(eglot-type-hint-face  ((t (:inherit eglot-inlay-hint-face :foreground "#7a8799"))))
-;;  '(eglot-parameter-hint-face ((t (:inherit eglot-inlay-hint-face :foreground "#7a8799")))))
-
 ;; eldoc-box renders the hover documentation in a neat child frame rather
 ;; than the cramped echo area. Works with any eldoc provider, including eglot.
 (use-package eldoc-box

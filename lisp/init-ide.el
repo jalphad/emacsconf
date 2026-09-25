@@ -4,8 +4,10 @@
 (require 'ide-go)
 (require 'ide-data)
 (require 'ide-java)
+(require 'ide-markdown)
+(require 'ide-nix)
 ;; (require 'ide-python)
-;; (require 'ide-rust)
+(require 'ide-rust)
 
 ;;; provide the feature so (require 'init-ide) works from init.el
 (provide 'init-ide)

@@ -1,12 +1,14 @@
 # Emacs Configuration
 
-Personal Emacs configuration focused on modal editing, project navigation, completion, Go development, Java development, and JSON/YAML schema-aware editing.
+Personal Emacs configuration focused on modal editing, project navigation,
+completion, Go, Java, and Rust development, and schema-aware data editing.
 
 ## Layout
 
 - `init.el` is the entry point. It extends `load-path`, registers `themes/`, then loads the init modules.
 - `lisp/init-*.el` contains top-level configuration for defaults, packages, completion, UI, navigation, and IDE support.
-- `lisp/ide/` contains language/tooling modules. Go lives in `ide-go.el`; JSON/YAML lives in `ide-data.el`.
+- `lisp/ide/` contains language/tooling modules such as `ide-go.el`,
+  `ide-java.el`, `ide-rust.el`, and `ide-data.el`.
 - `themes/` contains the custom `intellij-islands-dark` theme.
 - Runtime state such as `elpa/`, `eln-cache/`, `backups/`, `history`, and `recentf` is intentionally not tracked.
 
@@ -64,6 +66,25 @@ JSON/YAML development:
 
 The YAML language server is configured with schema mappings for OpenAPI, Kubernetes manifests, GitHub Actions workflows, and Docker Compose files.
 
+Nix development:
+
+- `nixd`: Nix language server for Eglot completion, diagnostics, navigation, and code actions.
+- `nix-mode`: installed automatically from MELPA for syntax highlighting and indentation.
+
+Rust development:
+
+- `cargo`, `rustc`, and `rustfmt`: Rust toolchain, builds, tests, and formatting.
+- `rust-analyzer`: completion, Clippy diagnostics, semantic highlighting, inlay hints, navigation, refactoring, macro expansion, and Cargo runnable discovery.
+- `lldb-dap`: LLDB's native Debug Adapter Protocol server used by Dape. Set `LLDB_DAP_PATH` when it is not on `PATH`.
+- `taplo`: Cargo.toml completion, validation, and formatting.
+- `cargo-llvm-cov`: generates LCOV data displayed inline by Coverlay.
+- Rust and TOML tree-sitter grammars: preferred major modes; `rust-mode` and `conf-toml-mode` are used as fallbacks.
+
+Useful Rust bindings include `C-c t t`/`C-c t d` for running or debugging the
+test at point, `C-c t r` for any Rust Analyzer runnable, `C-c t c` for inline
+coverage, and `C-c g m` for macro expansion. Combobulate is not enabled in Rust
+buffers because its current language bundle does not support Rust.
+
 ## Installing With Nix
 
 For NixOS/Home Manager, install the tools through your system or user package list. Attribute names can vary slightly by nixpkgs revision, but this is the intended shape:
@@ -91,6 +112,16 @@ environment.systemPackages = with pkgs; [
   nodePackages.vscode-langservers-extracted
   nodePackages.yaml-language-server
   nodePackages.prettier
+
+  nixd
+
+  cargo
+  rustc
+  rustfmt
+  rust-analyzer
+  lldb
+  taplo
+  cargo-llvm-cov
 ];
 
 programs.emacs = {
@@ -100,6 +131,8 @@ programs.emacs = {
     tree-sitter-java
     tree-sitter-json
     tree-sitter-yaml
+    tree-sitter-rust
+    tree-sitter-toml
   ];
 };
 ```
@@ -121,6 +154,21 @@ Install Node-based language servers and formatters:
 npm install -g vscode-langservers-extracted yaml-language-server prettier
 ```
 
+For Rust, install a toolchain plus the optional Cargo/TOML tools:
+
+```sh
+brew install rustup taplo llvm
+rustup-init
+rustup component add rust-analyzer rustfmt
+cargo install cargo-llvm-cov
+```
+
+Make Homebrew's `lldb-dap` available on `PATH`, or set `LLDB_DAP_PATH` to
+`$(brew --prefix llvm)/bin/lldb-dap`. Rust debugging builds ordinary binaries
+at their predictable Cargo path and uses Cargo's JSON artifact output for
+tests, examples, benchmarks, and nonstandard output layouts. The Rust
+toolchain's LLDB pretty-printers are loaded automatically for each session.
+
 Install icon fonts from Emacs with `M-x all-the-icons-install-fonts` and `M-x nerd-icons-install-fonts`. If font prompts fail on macOS, install a Nerd Font with Homebrew Cask and choose it in your Emacs frame:
 
 ```sh
@@ -136,6 +184,8 @@ M-x treesit-install-language-grammar RET go RET
 M-x treesit-install-language-grammar RET java RET
 M-x treesit-install-language-grammar RET json RET
 M-x treesit-install-language-grammar RET yaml RET
+M-x treesit-install-language-grammar RET rust RET
+M-x treesit-install-language-grammar RET toml RET
 ```
 
 Emacs looks for compiled grammars in `treesit-extra-load-path`, then `~/.config/emacs/tree-sitter/`, then system library paths.
@@ -147,6 +197,9 @@ Run these from the repository root:
 ```sh
 emacs --batch -L lisp -L lisp/ide -l init.el
 emacs --batch -L lisp -L lisp/ide -f batch-byte-compile lisp/*.el lisp/ide/*.el themes/*.el
+emacs --batch -L lisp -L lisp/ide -L test \
+  -l lisp/init-packages.el -l lisp/ide/ide-rust.el \
+  -l test/ide-rust-test.el -f ert-run-tests-batch-and-exit
 ```
 
 For interactive startup problems, use:

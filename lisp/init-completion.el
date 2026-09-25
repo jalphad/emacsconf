@@ -160,6 +160,12 @@
   :config
   (yas-global-mode 1))
 
+;; Yasnippet itself expands snippets but does not expose them through
+;; `completion-at-point-functions'.  This adapter lets Cape merge snippet
+;; candidates with Eglot's language-server candidates.
+(use-package yasnippet-capf
+  :after yasnippet)
+
 ;; ----------------------------------------------------------------------------
 ;; Cape — additional completion-at-point backends for Corfu
 ;; ----------------------------------------------------------------------------

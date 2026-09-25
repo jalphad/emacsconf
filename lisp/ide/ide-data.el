@@ -27,7 +27,7 @@
 (declare-function cape-capf-super "cape")
 (declare-function cape-file "cape")
 (declare-function yas-minor-mode "yasnippet")
-(declare-function yasnippet-capf "yasnippet")
+(declare-function yasnippet-capf "yasnippet-capf")
 (declare-function yaml-mode "yaml-mode")
 
 (defconst my/data-openapi-schema-url

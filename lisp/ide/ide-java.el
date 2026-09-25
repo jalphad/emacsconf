@@ -39,7 +39,7 @@
 (declare-function envrc-reload "envrc")
 (declare-function projectile-register-project-type "projectile")
 (declare-function yas-minor-mode "yasnippet")
-(declare-function yasnippet-capf "yasnippet")
+(declare-function yasnippet-capf "yasnippet-capf")
 
 (defcustom my/java-debug-plugin-jars nil
   "List of Java Debug Server plugin jars passed to jdtls.
