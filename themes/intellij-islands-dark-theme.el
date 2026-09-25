@@ -6,7 +6,7 @@
 
 ;;; Commentary:
 ;; A dark theme matching IntelliJ IDEA's New UI dark theme colors,
-;; tuned for Go development with go-ts-mode, eglot semantic tokens,
+;; tuned for Go and Rust development with tree-sitter, eglot semantic tokens,
 ;; Corfu, Vertico, Marginalia, Treemacs, and doom-modeline.
 ;;
 ;; Installation:
@@ -163,7 +163,7 @@
    ;; =========================================================
    ;; 4. EGLOT SEMANTIC FACES
    ;; =========================================================
-   ;; Token types (as reported by gopls via eglot):
+   ;; Standard token types reported by gopls and rust-analyzer:
    `(eglot-semantic-namespace     ((t (:foreground ,namespace))))
    `(eglot-semantic-type          ((t (:foreground ,type-name))))
    `(eglot-semantic-class         ((t (:foreground ,type-name))))
@@ -188,6 +188,17 @@
    `(eglot-semantic-operator      ((t (:foreground ,operator))))
    `(eglot-semantic-regexp        ((t (:foreground ,string))))
    `(eglot-semantic-decorator     ((t (:foreground ,fg-dim))))
+
+   ;; Rust Analyzer extensions to the standard semantic-token vocabulary.
+   `(eglot-semantic-builtinType         ((t (:foreground ,keyword))))
+   `(eglot-semantic-typeAlias           ((t (:foreground ,type-name))))
+   `(eglot-semantic-lifetime            ((t (:foreground ,namespace :slant italic))))
+   `(eglot-semantic-selfKeyword         ((t (:foreground ,keyword))))
+   `(eglot-semantic-macroBang           ((t (:foreground ,keyword))))
+   `(eglot-semantic-deriveHelper        ((t (:foreground ,fg-dim))))
+   `(eglot-semantic-unresolvedReference ((t (:foreground ,error-fg
+                                                         :underline (:style wave
+                                                                     :color ,error-fg)))))
    
    ;; Modifier faces (applied on top of token type faces):
    `(eglot-semantic-definition    ((t (:weight bold))))
