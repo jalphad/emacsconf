@@ -269,10 +269,10 @@
   (dashboard-setup-startup-hook))
 
 ;; ----------------------------------------------------------------------------
-;; Side windows — pin help/doc buffers to the bottom of the frame
+;; Window placement
 ;; ----------------------------------------------------------------------------
 
-(defun my-switch-to-window (window)
+(defun my/switch-to-window (window)
   (select-window window))
 
 ;; Help, documentation and diagnostic buffers open as side windows at the
@@ -292,7 +292,14 @@
                (display-buffer-reuse-window
                 display-buffer-below-selected)
                (dedicated . t)
-               (body-function . my-switch-to-window)))
+               (body-function . my/switch-to-window)))
+
+;; Keep Magit status below the current window, even on wide frames.
+(add-to-list 'display-buffer-alist
+             '((major-mode . magit-status-mode)
+               (display-buffer-reuse-window
+                display-buffer-below-selected)
+               (body-function . my/switch-to-window)))
 
 ;; ----------------------------------------------------------------------------
 ;; Other

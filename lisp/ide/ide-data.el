@@ -14,6 +14,9 @@
 
 ;;; Code:
 
+(require 'cl-lib)
+(require 'xref)
+
 (defvar eglot-server-programs)
 (defvar apheleia-formatters)
 (defvar apheleia-mode-alist)
@@ -21,6 +24,14 @@
 (declare-function eglot-alternatives "eglot")
 (declare-function eglot-completion-at-point "eglot")
 (declare-function eglot-ensure "eglot")
+(declare-function eglot-managed-p "eglot")
+(declare-function eglot-current-server "eglot")
+(declare-function eglot-server-capable "eglot")
+(declare-function eglot--request "eglot")
+(declare-function eglot--TextDocumentIdentifier "eglot")
+(declare-function eglot-range-region "eglot")
+(declare-function eglot-uri-to-path "eglot")
+(declare-function envrc-mode "envrc")
 (declare-function my/gopls-workspace-configuration "ide-common")
 (declare-function cape-capf-super "cape")
 (declare-function cape-file "cape")
@@ -113,14 +124,51 @@
 
 (defun my/data-maybe-start-eglot ()
   "Start Eglot when the JSON/YAML language server is installed."
+  ;; Global envrc-mode runs after major-mode hooks.  Import the project
+  ;; environment now so the executable check can see devshell tools.
+  (when (and (fboundp 'envrc-mode)
+             (executable-find "direnv"))
+    (envrc-mode 1))
   (if (my/data--server-executable)
       (eglot-ensure)
-    (message "Install vscode-langservers-extracted or yaml-language-server for schema completion and $ref navigation")))
+    (message (concat "JSON/YAML language server is not on this buffer's PATH; "
+                     "install vscode-langservers-extracted or yaml-language-server, "
+                     "or load the devshell via an allowed .envrc containing `use flake'"))))
+
+(defun my/data-follow-reference ()
+  "Follow a server-provided local $ref link, or find the definition at point."
+  (interactive)
+  (let* ((links (when (and (eglot-managed-p)
+                           (eglot-server-capable :documentLinkProvider))
+                  (eglot--request
+                   (eglot-current-server) :textDocument/documentLink
+                   (list :textDocument (eglot--TextDocumentIdentifier)))))
+         (link (cl-find-if
+                (lambda (item)
+                  (pcase-let ((`(,beg . ,end)
+                               (eglot-range-region (plist-get item :range))))
+                    (and (<= beg (point)) (< (point) end))))
+                links))
+         (target (plist-get link :target)))
+    ;; YAML/JSON servers encode resolved in-document pointers as URI#LINE,COL.
+    (if (and target
+             (string-match "\\`\\(file:.*\\)#\\([0-9]+\\),\\([0-9]+\\)\\'" target))
+        (let ((uri (match-string 1 target))
+              (line (1- (string-to-number (match-string 2 target))))
+              (column (1- (string-to-number (match-string 3 target)))))
+          (xref-push-marker-stack)
+          (find-file (eglot-uri-to-path uri))
+          (widen)
+          (let ((position (list :line line :character column)))
+            (goto-char (car (eglot-range-region
+                             (list :start position :end position))))))
+      (call-interactively #'xref-find-definitions))))
 
 (defun my/data-mode-setup ()
   "Shared setup for JSON and YAML buffers."
   (yas-minor-mode)
   (my/data-maybe-start-eglot)
+  (local-set-key [remap xref-find-definitions] #'my/data-follow-reference)
   (setq-local completion-at-point-functions
               (list (cape-capf-super
                      #'eglot-completion-at-point
@@ -161,15 +209,35 @@
 ;; yaml-ts-mode — tree-sitter YAML editing
 ;; ----------------------------------------------------------------------------
 
+(defun my/yaml-highlight-setup ()
+  "Use theme keyword colors for YAML keys and plain text for scalar values."
+  (require 'face-remap)
+  ;; Face remapping is buffer-local, so other languages keep their colors.
+  (dolist (face '(font-lock-variable-name-face font-lock-property-use-face))
+    (face-remap-add-relative face 'font-lock-keyword-face))
+  (dolist (face '(font-lock-number-face font-lock-constant-face))
+    (face-remap-add-relative face 'default)))
+
+(defun my/yaml-ts-mode-setup ()
+  "Set up YAML tooling, falling back when tree-sitter is unavailable."
+  ;; Emacs can select yaml-ts-mode even if grammar installation fails or
+  ;; is declined.  In that case it creates no parser or font-lock settings.
+  (if (treesit-parser-list)
+      (my/data-mode-setup)
+    (yaml-mode)
+    (message "YAML tree-sitter parser unavailable; using yaml-mode highlighting")))
+
 (use-package yaml-ts-mode
   :ensure nil
-  :hook (yaml-ts-mode . my/data-mode-setup))
+  :hook ((yaml-ts-mode . my/yaml-ts-mode-setup)
+         (yaml-ts-mode . my/yaml-highlight-setup)))
 
 (use-package yaml-mode
   :ensure t
   :commands yaml-mode
   :mode ("\\.ya?ml\\'" . yaml-mode)
-  :hook (yaml-mode . my/data-mode-setup))
+  :hook ((yaml-mode . my/data-mode-setup)
+         (yaml-mode . my/yaml-highlight-setup)))
 
 ;; ----------------------------------------------------------------------------
 ;; Formatting
