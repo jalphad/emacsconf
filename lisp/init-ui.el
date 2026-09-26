@@ -201,21 +201,20 @@
   :config
   ;; Never let Emacs select the Treemacs window with `other-window' (C-x o).
   ;; You interact with Treemacs explicitly via F5, not by accident.
-  (treemacs-is-never-other-window)
+  (setq treemacs-is-never-other-window t)
 
-  ;; Automatically move focus in the tree to match the file you have open.
-  (treemacs-project-follow-mode t)
+  ;; Follow the current file without replacing the workspace's project list.
+  (treemacs-follow-mode 1)
 
-  ;; Follow the currently playing file — mirrors project-follow but for the
-  ;; active buffer rather than the active project root.
+  ;; Update the tree when files change on disk.
   (treemacs-filewatch-mode t)
 
   ;; Show thin git status indicators next to files and directories.
-  (treemacs-git-mode 'deferred)
+  (treemacs-git-mode (if treemacs-python-executable 'deferred 'simple))
 
   ;; Collapse directories that contain only one child into a single node
   ;; (e.g. src/main/java/com/example becomes one collapsed entry).
-  (setq treemacs-collapse-dirs 3)
+  (setq treemacs-collapse-dirs (if treemacs-python-executable 3 0))
 
   ;; Width of the sidebar in characters.
   (setq treemacs-width 35)
@@ -241,6 +240,7 @@
 ;; Replaces the blank *scratch* buffer with a dashboard showing recent files,
 ;; projects, bookmarks, and agenda items.
 (use-package dashboard
+  :unless noninteractive
   :config
   (setq dashboard-banner-logo-title "Welcome back."
         ;; Use the Emacs logo as the banner; alternatives:
@@ -260,9 +260,6 @@
         dashboard-icon-type           'all-the-icons
         dashboard-set-heading-icons   t
         dashboard-set-file-icons      t
-
-        ;; Show the Emacs init load time at the bottom.
-        dashboard-set-init-info       t
 
         ;; Centre all dashboard content horizontally.
         dashboard-center-content      t)

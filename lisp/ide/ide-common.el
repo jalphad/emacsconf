@@ -1,5 +1,28 @@
 ;;; ide-common.el --- Common IDE configuration -*- lexical-binding: t -*-
 
+(require 'cl-lib)
+
+;; ----------------------------------------------------------------------------
+;; Tree-sitter — Emacs 31 mode selection
+;; ----------------------------------------------------------------------------
+
+(use-package treesit
+  :ensure nil
+  :demand t
+  :config
+  ;; The external go-mode package uses different names for these fallback
+  ;; modes than Emacs's built-in remapping table.
+  (add-to-list 'treesit-major-mode-remap-alist
+               '(go-dot-mod-mode . go-mod-ts-mode))
+  (add-to-list 'treesit-major-mode-remap-alist
+               '(go-dot-work-mode . go-work-ts-mode))
+  ;; Use available grammars (including Nix-provided ones), and offer to
+  ;; download and compile missing grammars when a matching file is opened.
+  (setopt treesit-auto-install-grammar 'ask
+          treesit-enabled-modes
+          '(go-ts-mode go-mod-ts-mode go-work-ts-mode
+            java-ts-mode json-ts-mode yaml-ts-mode rust-ts-mode toml-ts-mode)))
+
 ;; ----------------------------------------------------------------------------
 ;; eglot — built-in LSP client
 ;; ----------------------------------------------------------------------------
@@ -83,7 +106,7 @@
               ("C-c f"   . eglot-format-buffer)     ; manual format
               ("C-c d"   . eldoc)                   ; show docs at point
               ("M-."     . xref-find-definitions)   ; go to definition
-              ("M-,"     . xref-pop-marker-stack)   ; jump back
+              ("M-,"     . xref-go-back)            ; jump back
               ("M-?"     . xref-find-references)))  ; find all references
 
 ;; eldoc-box renders the hover documentation in a neat child frame rather
@@ -133,7 +156,7 @@
 (use-package dape
   :config
   ;; Save window configuration before debug session so it can easily be restored after
-  (add-hook 'dape-on-start-hooks
+  (add-hook 'dape-start-hook
             (lambda ()
               (setq my/pre-debug-window-config
                     (current-window-configuration))
@@ -182,6 +205,7 @@
 ;; combobulate let's you use context aware editing commands
 ;; configuration here since it's not tied to configuration for a specific language
 (use-package combobulate
+  :commands combobulate-mode
   :vc (:url "https://github.com/mickeynp/combobulate" :rev :newest))
 
 

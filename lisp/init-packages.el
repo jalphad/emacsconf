@@ -21,26 +21,16 @@
 ;; Initialise the package system. This reads the archive contents and makes
 ;; installed packages available. On first run the archive index is empty until
 ;; you call `package-refresh-contents'.
-(package-initialize)
-
-;; ----------------------------------------------------------------------------
-;; Refresh archive index when stale
-;; ----------------------------------------------------------------------------
-
-;; Fetch the package index from the archives if we don't have it yet.
-;; This happens on a fresh install; subsequent startups skip the network call.
-(unless package-archive-contents
-  (package-refresh-contents))
+(unless package--initialized
+  (package-initialize))
 
 ;; ----------------------------------------------------------------------------
 ;; use-package bootstrap
 ;; ----------------------------------------------------------------------------
 
-;; use-package is built in from Emacs 29 onwards. Install it from MELPA for
-;; older versions so the rest of the config can rely on it unconditionally.
-(unless (package-installed-p 'use-package)
-  (package-install 'use-package))
-
+;; Emacs 31 includes use-package.  Its :ensure handler refreshes archive
+;; metadata when a missing package actually needs to be installed, so normal
+;; startup doesn't need to fetch the archive index.
 (require 'use-package)
 
 ;; Always ensure packages declared with use-package are installed if missing.

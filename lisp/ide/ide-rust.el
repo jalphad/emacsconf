@@ -22,7 +22,6 @@
 (require 'project)
 (require 'seq)
 (require 'subr-x)
-(require 'treesit)
 
 (defvar apheleia-formatters)
 (defvar apheleia-mode-alist)
@@ -98,24 +97,6 @@ Set LLDB_DAP_PATH or customize this variable when the adapter is not on PATH."
   (plist-put (copy-tree configuration)
              :rust-analyzer
              (my/rust-analyzer-settings)))
-
-(defun my/rust-treesit-ready-p ()
-  "Return non-nil when the Rust tree-sitter grammar is usable."
-  (treesit-ready-p 'rust t))
-
-(defun my/rust-source-mode ()
-  "Use `rust-ts-mode' when possible, otherwise use `rust-mode'."
-  (interactive)
-  (if (my/rust-treesit-ready-p)
-      (rust-ts-mode)
-    (rust-mode)))
-
-(defun my/rust-toml-mode ()
-  "Use `toml-ts-mode' when possible, otherwise use `conf-toml-mode'."
-  (interactive)
-  (if (treesit-ready-p 'toml t)
-      (toml-ts-mode)
-    (conf-toml-mode)))
 
 (defun my/rust-project-root ()
   "Return the nearest Cargo or Emacs project root."
@@ -751,7 +732,7 @@ Prompt only when Cargo reports multiple equally suitable executables."
     (my/rust--display-text
      (format "*rust macro: %s*" (or (plist-get response :name) "expansion"))
      (plist-get response :expansion)
-     (if (fboundp 'rust-ts-mode) #'rust-ts-mode #'rust-mode))))
+     (major-mode-remap 'rust-mode))))
 
 (defun my/rust--goto-location (location)
   "Visit an LSP LOCATION or LocationLink."
@@ -862,14 +843,14 @@ Prompt only when Cargo reports multiple equally suitable executables."
 
 (use-package rust-mode
   :ensure t
-  :mode ("\\.rs\\'" . my/rust-source-mode)
+  :mode ("\\.rs\\'" . rust-mode)
   :hook (rust-mode . my/rust-mode-setup)
   :config
   (my/rust-install-bindings rust-mode-map))
 
 (use-package conf-mode
   :ensure nil
-  :mode ("\\.toml\\'" . my/rust-toml-mode)
+  :mode ("\\.toml\\'" . conf-toml-mode)
   :hook (conf-toml-mode . my/rust-toml-setup))
 
 (use-package toml-ts-mode

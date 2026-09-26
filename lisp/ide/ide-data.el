@@ -14,8 +14,6 @@
 
 ;;; Code:
 
-(require 'treesit)
-
 (defvar eglot-server-programs)
 (defvar apheleia-formatters)
 (defvar apheleia-mode-alist)
@@ -129,24 +127,6 @@
                      #'yasnippet-capf
                      #'cape-file))))
 
-(defun my/data-treesit-ready-p (language)
-  "Return non-nil when tree-sitter LANGUAGE can be used."
-  (treesit-ready-p language t))
-
-(defun my/data-json-mode ()
-  "Use tree-sitter JSON mode when available, otherwise use `js-json-mode'."
-  (interactive)
-  (if (my/data-treesit-ready-p 'json)
-      (json-ts-mode)
-    (js-json-mode)))
-
-(defun my/data-yaml-mode ()
-  "Use tree-sitter YAML mode when available, otherwise use `yaml-mode'."
-  (interactive)
-  (if (my/data-treesit-ready-p 'yaml)
-      (yaml-ts-mode)
-    (yaml-mode)))
-
 (with-eval-after-load 'eglot
   (add-to-list 'eglot-server-programs
                `(json-ts-mode . ,(eglot-alternatives
@@ -170,11 +150,11 @@
 
 (use-package json-ts-mode
   :ensure nil
-  :mode ("\\.json\\'" . my/data-json-mode)
   :hook (json-ts-mode . my/data-mode-setup))
 
 (use-package js
   :ensure nil
+  :mode ("\\.json\\'" . js-json-mode)
   :hook (js-json-mode . my/data-mode-setup))
 
 ;; ----------------------------------------------------------------------------
@@ -188,7 +168,7 @@
 (use-package yaml-mode
   :ensure t
   :commands yaml-mode
-  :mode ("\\.ya?ml\\'" . my/data-yaml-mode)
+  :mode ("\\.ya?ml\\'" . yaml-mode)
   :hook (yaml-mode . my/data-mode-setup))
 
 ;; ----------------------------------------------------------------------------

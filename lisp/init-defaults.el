@@ -56,7 +56,7 @@
 
 ;; Enable repeat-mode
 (repeat-mode 1)
-;; Exit by pressing Return
+;; Exit by pressing q.
 (setq repeat-exit-key "q")
 
 ;; Visual indicator in mode line that repeat is active
@@ -168,7 +168,7 @@ The DWIM behaviour of this command is as follows:
 ;; ----------------------------------------------------------------------------
 
 (use-package magit
-  :ensure t)
+  :commands (magit-status magit-dispatch magit-file-dispatch))
 
 ;; ----------------------------------------------------------------------------
 ;; Direnv integration

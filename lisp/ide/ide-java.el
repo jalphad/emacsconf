@@ -21,7 +21,6 @@
 
 (require 'cl-lib)
 (require 'project)
-(require 'treesit)
 
 (defvar eglot-server-programs)
 (defvar apheleia-formatters)
@@ -29,7 +28,6 @@
 (defvar dape-configs)
 
 (declare-function cape-capf-super "cape")
-(declare-function combobulate-mode "combobulate")
 (declare-function dape "dape")
 (declare-function eglot-completion-at-point "eglot")
 (declare-function eglot-current-server "eglot")
@@ -52,19 +50,8 @@ paths in the environment variable."
 (defun my/java-debug-plugin-jars ()
   "Return configured Java Debug Server plugin jar paths."
   (or my/java-debug-plugin-jars
-      (when-let ((env (getenv "JAVA_DEBUG_PLUGIN_JARS")))
+      (when-let* ((env (getenv "JAVA_DEBUG_PLUGIN_JARS")))
         (split-string env path-separator t))))
-
-(defun my/java-treesit-ready-p ()
-  "Return non-nil when the Java tree-sitter grammar can be used."
-  (treesit-ready-p 'java t))
-
-(defun my/java-mode ()
-  "Use tree-sitter Java mode when available, otherwise use `java-mode'."
-  (interactive)
-  (if (my/java-treesit-ready-p)
-      (java-ts-mode)
-    (java-mode)))
 
 (defun my/java-jdtls-command ()
   "Return the jdtls command for Eglot, including debug bundles when configured."
@@ -95,7 +82,7 @@ paths in the environment variable."
       (locate-dominating-file default-directory "settings.gradle.kts")
       (locate-dominating-file default-directory "build.gradle")
       (locate-dominating-file default-directory "build.gradle.kts")
-      (when-let ((project (project-current nil)))
+      (when-let* ((project (project-current nil)))
         (project-root project))
       default-directory))
 
@@ -293,8 +280,6 @@ This starts the build tool in debug mode and attaches Dape to port 5005."
   "Shared setup for Java buffers."
   (yas-minor-mode)
   (my/java-maybe-start-eglot)
-  (when (fboundp 'combobulate-mode)
-    (combobulate-mode))
   (setq-local completion-at-point-functions
               (list (cape-capf-super
                      #'my/java-eglot-completion-at-point
@@ -345,7 +330,6 @@ This starts the build tool in debug mode and attaches Dape to port 5005."
 
 (use-package java-ts-mode
   :ensure nil
-  :mode ("\\.java\\'" . my/java-mode)
   :hook (java-ts-mode . my/java-mode-setup)
   :bind (:map java-ts-mode-map
               ("C-c t t" . my/java-run-test-at-point)
@@ -354,10 +338,7 @@ This starts the build tool in debug mode and attaches Dape to port 5005."
               ("C-c t p" . my/java-run-test-project)
               ("M-." . my/java-goto-definition)
               ("M-," . my/java-pop-back)
-              ("M-?" . my/java-goto-references))
-  :config
-  (when (my/java-treesit-ready-p)
-    (add-to-list 'major-mode-remap-alist '(java-mode . java-ts-mode))))
+              ("M-?" . my/java-goto-references)))
 
 (use-package cc-mode
   :ensure nil

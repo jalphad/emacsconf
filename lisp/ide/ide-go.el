@@ -1,4 +1,4 @@
-;;; init-go.el --- Go language configuration -*- lexical-binding: t -*-
+;;; ide-go.el --- Go language configuration -*- lexical-binding: t -*-
 
 ;;; Commentary:
 ;; Full Go IDE setup built on:
@@ -33,7 +33,6 @@
 
 (use-package go-ts-mode
   :ensure nil ; built-in since Emacs 29
-  :mode "\\.go\\'"  ; open .go files in go-ts-mode automatically
   :hook
   ;; Yasnippet minor mode
   (go-ts-mode . yas-minor-mode)
@@ -54,10 +53,6 @@
                                      #'eglot-completion-at-point
                                      #'yasnippet-capf)))))
   :config
-  ;; Tell Emacs that .go files should use go-ts-mode (belt-and-suspenders
-  ;; alongside the :mode keyword above).
-  (add-to-list 'major-mode-remap-alist '(go-mode . go-ts-mode))
-  
   ;; We use apheleia with goimports and gofumpt formatters in go-ts-mode
   (with-eval-after-load 'apheleia
     (setf (alist-get 'goimports apheleia-formatters)
@@ -159,7 +154,7 @@
 
 (defun go-pop-back ()
   (interactive)
-  (call-interactively #'xref-pop-marker-stack))
+  (call-interactively #'xref-go-back))
 
 ;; Keybindings for Go
 (with-eval-after-load 'go-ts-mode
