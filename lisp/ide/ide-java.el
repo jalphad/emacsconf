@@ -53,23 +53,29 @@ paths in the environment variable."
       (when-let* ((env (getenv "JAVA_DEBUG_PLUGIN_JARS")))
         (split-string env path-separator t))))
 
-(defun my/java-jdtls-command ()
+(defun my/java-jdtls-command (&optional _interactive _project)
   "Return the jdtls command for Eglot, including debug bundles when configured."
   (let ((bundles (vconcat (my/java-debug-plugin-jars)))
-        (jdtls (or (getenv "JDTLS_PATH") "jdtls")))
+        (jdtls (if (file-remote-p default-directory)
+                   ;; `direnv exec' supplies JDTLS_PATH on the remote host.
+                   '("sh" "-c" "exec \"${JDTLS_PATH:-jdtls}\"")
+                 (list (or (getenv "JDTLS_PATH") "jdtls")))))
     (if (> (length bundles) 0)
-        `(,jdtls :initializationOptions (:bundles ,bundles))
-      `(,jdtls))))
+        (append jdtls `(:initializationOptions (:bundles ,bundles)))
+      jdtls)))
 
 (defun my/java-jdtls-available-p ()
-  "Return non-nil when jdtls is available in PATH or via JDTLS_PATH."
-  (let ((jdtls-path (getenv "JDTLS_PATH")))
-    (or (executable-find "jdtls")
-        (and jdtls-path (file-executable-p jdtls-path)))))
+  "Return non-nil when jdtls can be started in this buffer.
+For remote buffers, direnv resolves the executable when Eglot starts."
+  (or (file-remote-p default-directory)
+      (let ((jdtls-path (getenv "JDTLS_PATH")))
+        (or (executable-find "jdtls")
+            (and jdtls-path (file-executable-p jdtls-path))))))
 
 (defun my/java-reload-direnv ()
   "Reload direnv/envrc for the current buffer when available."
-  (when (fboundp 'envrc-reload)
+  (when (and (not (file-remote-p default-directory))
+             (fboundp 'envrc-reload))
     (ignore-errors
       (envrc-reload))))
 
@@ -243,7 +249,11 @@ This starts the build tool in debug mode and attaches Dape to port 5005."
   "Start Eglot for Java when jdtls is installed."
   (my/java-reload-direnv)
   (if (my/java-jdtls-available-p)
-      (eglot-ensure)
+      (progn
+        ;; A remote Nix shell may need more than the default 30 seconds.
+        (when (file-remote-p default-directory)
+          (setq-local eglot-connect-timeout 120))
+        (eglot-ensure))
     (message "Install jdtls for Java completion, diagnostics, xref, and code actions")))
 
 (defun my/java-eglot-completion-at-point ()
@@ -287,7 +297,7 @@ This starts the build tool in debug mode and attaches Dape to port 5005."
 
 (with-eval-after-load 'eglot
   (add-to-list 'eglot-server-programs
-               `((java-mode java-ts-mode) . ,(my/java-jdtls-command))))
+               '((java-mode java-ts-mode) . my/java-jdtls-command)))
 
 (with-eval-after-load 'dape
   (add-to-list 'dape-configs

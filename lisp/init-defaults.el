@@ -175,6 +175,8 @@ The DWIM behaviour of this command is as follows:
 ;; ----------------------------------------------------------------------------
 
 (use-package envrc
+  :init
+  (setq envrc-remote t)
   :hook (after-init . envrc-global-mode))
 
 (use-package inheritenv)

@@ -2,6 +2,36 @@
 
 (require 'cl-lib)
 
+(defvar envrc-mode)
+(defvar envrc--remote-path)
+(defvar tramp-remote-process-environment)
+
+(defun my/eglot-remote-direnv-command (original command)
+  "Run remote Eglot COMMAND in its direnv environment via ORIGINAL."
+  (funcall original
+           (if (and (file-remote-p default-directory)
+                    (locate-dominating-file default-directory ".envrc")
+                    (not (equal (file-name-nondirectory (car command))
+                                "direnv")))
+               (append (list "direnv" "exec" (file-local-name default-directory))
+                       command)
+             command)))
+
+(defun my/eglot-remote-process (original &rest args)
+  "Start remote Eglot process ARGS with a small TRAMP environment."
+  (if (and (file-remote-p default-directory)
+           (string-prefix-p "EGLOT (" (or (plist-get args :name) "")))
+      (let ((envrc-mode nil)
+            (envrc--remote-path nil)
+            (tramp-remote-process-environment
+             (default-value 'tramp-remote-process-environment)))
+        (apply original args))
+    (apply original args)))
+
+(with-eval-after-load 'eglot
+  (advice-add 'eglot--cmd :around #'my/eglot-remote-direnv-command)
+  (advice-add 'make-process :around #'my/eglot-remote-process))
+
 ;; ----------------------------------------------------------------------------
 ;; Tree-sitter — Emacs 31 mode selection
 ;; ----------------------------------------------------------------------------
