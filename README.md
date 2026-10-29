@@ -52,10 +52,9 @@ Go development:
 Java development:
 
 - `java` and `javac`: JDK 17+ recommended; JDTLS works best with a modern JDK.
-- `jdtls`: Java language server for Eglot. Required for completion, diagnostics, `M-.`, references, code actions, and rename.
+- `jdtls`: Java language server for Eglot. Required for completion, diagnostics, navigation, code actions, rename, and formatting through Eglot or Apheleia. Formatting uses Eclipse defaults unless the project supplies formatter preferences.
 - `mvn` or `./mvnw`: Maven support for running tests.
 - `gradle` or `./gradlew`: Gradle support for running tests.
-- `google-java-format`: optional formatter used by Apheleia.
 - Microsoft Java Debug Server plugin jars: required if you want Dape-based Java debugging through JDTLS.
 
 JSON/YAML development:
@@ -106,7 +105,6 @@ environment.systemPackages = with pkgs; [
   jdt-language-server
   maven
   gradle
-  google-java-format
 
   nodejs
   nodePackages.vscode-langservers-extracted
@@ -144,7 +142,7 @@ If you use a dev shell instead of global packages, include the same tools in `mk
 Install Emacs and core command-line tools:
 
 ```sh
-brew install emacs git ripgrep direnv go gopls delve goimports gofumpt gomodifytags node jdtls maven gradle google-java-format
+brew install emacs git ripgrep direnv go gopls delve goimports gofumpt gomodifytags node jdtls maven gradle
 brew install --cask microsoft-openjdk@21
 ```
 

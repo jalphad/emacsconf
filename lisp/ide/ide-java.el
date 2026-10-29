@@ -5,14 +5,13 @@
 ;;   java-ts-mode   — tree-sitter based major mode, built in to Emacs 29+
 ;;   eglot          — LSP client connecting to Eclipse JDT Language Server
 ;;   dape           — DAP client using the JDTLS Java Debug Server plugin
-;;   apheleia       — optional formatting via google-java-format
+;;   apheleia       — asynchronous formatting through jdtls
 ;;
 ;; External tools recommended on your PATH:
 ;;   java, javac    — JDK 17+ recommended for jdtls
 ;;   jdtls          — Eclipse JDT Language Server
 ;;   mvn or ./mvnw  — Maven test/build support
 ;;   gradle or ./gradlew — Gradle test/build support
-;;   google-java-format — optional formatter
 ;;
 ;; Debugging requires the Microsoft Java Debug Server plugin to be loaded by
 ;; jdtls. Set `my/java-debug-plugin-jars' or JAVA_DEBUG_PLUGIN_JARS to the jar.
@@ -23,6 +22,7 @@
 (require 'project)
 
 (defvar eglot-server-programs)
+(defvar eglot-move-to-linepos-function)
 (defvar apheleia-formatters)
 (defvar apheleia-mode-alist)
 (defvar dape-configs)
@@ -34,6 +34,11 @@
 (declare-function eglot-ensure "eglot")
 (declare-function eglot-managed-p "eglot")
 (declare-function eglot-execute-command "eglot")
+(declare-function eglot-server-capable "eglot")
+(declare-function eglot--async-request "eglot")
+(declare-function eglot--apply-text-edits "eglot")
+(declare-function eglot--signal-textDocument/didChange "eglot")
+(declare-function eglot--TextDocumentIdentifier "eglot")
 (declare-function envrc-reload "envrc")
 (declare-function projectile-register-project-type "projectile")
 (declare-function yas-minor-mode "yasnippet")
@@ -332,11 +337,43 @@ This starts the build tool in debug mode and attaches Dape to port 5005."
                  :hostName "localhost"
                  :port 5005)))
 
+(cl-defun my/java-apheleia-format (&key buffer scratch callback &allow-other-keys)
+  "Format Java BUFFER through jdtls, applying its edits to SCRATCH.
+Call CALLBACK with an error when Eglot formatting is unavailable."
+  (condition-case err
+      (with-current-buffer buffer
+        (unless (and (eglot-managed-p)
+                     (eglot-server-capable :documentFormattingProvider))
+          (user-error "Java formatting requires an active jdtls Eglot connection"))
+        (let ((server (eglot-current-server))
+              (move-to-linepos eglot-move-to-linepos-function)
+              (params (list :textDocument (eglot--TextDocumentIdentifier)
+                            :options (list :tabSize tab-width
+                                           :insertSpaces (if indent-tabs-mode :json-false t)
+                                           :insertFinalNewline (if require-final-newline t :json-false)
+                                           :trimFinalNewlines (if delete-trailing-lines t :json-false)))))
+          ;; Match `eglot-format-buffer': send buffered changes before formatting.
+          (eglot--signal-textDocument/didChange)
+          (eglot--async-request
+           server :textDocument/formatting params
+           :success-fn
+           (lambda (edits)
+             (condition-case apply-err
+                 (progn
+                   (with-current-buffer scratch
+                     (let ((eglot-move-to-linepos-function move-to-linepos))
+                       (eglot--apply-text-edits edits nil t)))
+                   (funcall callback))
+               (error (funcall callback apply-err))))
+           :error-fn (lambda (request-err)
+                       (funcall callback (cons 'error request-err))))))
+    (error (funcall callback err))))
+
 (with-eval-after-load 'apheleia
-  (setf (alist-get 'google-java-format apheleia-formatters)
-        '("google-java-format" "-"))
-  (setf (alist-get 'java-ts-mode apheleia-mode-alist) 'google-java-format)
-  (setf (alist-get 'java-mode apheleia-mode-alist) 'google-java-format))
+  (setf (alist-get 'my/java-jdtls apheleia-formatters)
+        #'my/java-apheleia-format)
+  (setf (alist-get 'java-ts-mode apheleia-mode-alist) 'my/java-jdtls)
+  (setf (alist-get 'java-mode apheleia-mode-alist) 'my/java-jdtls))
 
 (use-package java-ts-mode
   :ensure nil
