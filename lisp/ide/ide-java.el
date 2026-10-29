@@ -4,6 +4,7 @@
 ;; Java IDE setup built on:
 ;;   java-ts-mode   — tree-sitter based major mode, built in to Emacs 29+
 ;;   eglot          — LSP client connecting to Eclipse JDT Language Server
+;;   flymake        — compiler errors and JDT warnings supplied by Eglot
 ;;   dape           — DAP client using the JDTLS Java Debug Server plugin
 ;;   apheleia       — asynchronous formatting through jdtls
 ;;
@@ -20,8 +21,10 @@
 
 (require 'cl-lib)
 (require 'project)
+(require 'flymake)
 
 (defvar eglot-server-programs)
+(defvar eglot-workspace-configuration)
 (defvar eglot-move-to-linepos-function)
 (defvar apheleia-formatters)
 (defvar apheleia-mode-alist)
@@ -83,6 +86,23 @@ For remote buffers, direnv resolves the executable when Eglot starts."
              (fboundp 'envrc-reload))
     (ignore-errors
       (envrc-reload))))
+
+(defun my/java-find-project (directory)
+  "Find a Java build project above DIRECTORY, including outside Git."
+  (when (derived-mode-p 'java-mode 'java-ts-mode)
+    (when-let* ((root (locate-dominating-file
+                      directory
+                      (lambda (dir)
+                        (cl-some (lambda (file)
+                                   (file-exists-p (expand-file-name file dir)))
+                                 '("pom.xml" "settings.gradle" "settings.gradle.kts"
+                                   "build.gradle" "build.gradle.kts"))))))
+      (cons 'my/java root))))
+
+(cl-defmethod project-root ((project (head my/java)))
+  (cdr project))
+
+(add-hook 'project-find-functions #'my/java-find-project)
 
 (defun my/java-project-root ()
   "Return the Java project root for the current buffer."
@@ -294,6 +314,7 @@ This starts the build tool in debug mode and attaches Dape to port 5005."
 (defun my/java-mode-setup ()
   "Shared setup for Java buffers."
   (yas-minor-mode)
+  (flymake-mode 1)
   (my/java-maybe-start-eglot)
   (setq-local completion-at-point-functions
               (list (cape-capf-super
@@ -301,6 +322,14 @@ This starts the build tool in debug mode and attaches Dape to port 5005."
                      #'yasnippet-capf))))
 
 (with-eval-after-load 'eglot
+  ;; Eglot reads settings in a temporary buffer, rather than the Java buffer.
+  ;; Set defaults here so the server actually receives them.
+  (setq-default eglot-workspace-configuration
+                (plist-put (copy-sequence
+                            (default-value 'eglot-workspace-configuration))
+                           :java '(:autobuild (:enabled t)
+                                   :configuration
+                                   (:updateBuildConfiguration "automatic"))))
   (add-to-list 'eglot-server-programs
                '((java-mode java-ts-mode) . my/java-jdtls-command)))
 

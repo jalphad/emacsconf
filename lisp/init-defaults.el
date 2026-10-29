@@ -26,6 +26,72 @@
 (load custom-file :no-error-if-file-is-missing)
 
 ;; ----------------------------------------------------------------------------
+;; Project trust — shared by all languages
+;; ----------------------------------------------------------------------------
+
+(defvar my/declined-git-projects (make-hash-table :test #'equal)
+  "Git repository roots whose trust prompt was declined this session.")
+
+(defvar flymake-mode)
+(declare-function flymake-start "flymake")
+
+(defun my/git-project-root ()
+  "Return the canonical Git root for the current file, or nil.
+Recognize .git directories and worktree files, including over TRAMP."
+  (when buffer-file-name
+    (when-let* ((root (locate-dominating-file
+                      (file-name-directory (file-truename buffer-file-name))
+                      ".git")))
+      (file-name-as-directory (file-truename root)))))
+
+(defun my/restart-trusted-project-flymake (root)
+  "Restart enabled Flymake backends in trusted buffers under ROOT."
+  (dolist (buffer (buffer-list))
+    (with-current-buffer buffer
+      (when (and (bound-and-true-p flymake-mode)
+                 buffer-file-name
+                 (trusted-content-p)
+                 (file-in-directory-p buffer-file-name root))
+        (condition-case err
+            (flymake-start nil t)
+          (error (message "Could not restart Flymake in %s: %s"
+                          (buffer-name) (error-message-string err))))))))
+
+(defun my/trust-git-project (&optional automatic)
+  "Ask to trust the current file's Git repository and persist acceptance.
+Trust permits Emacs tools to execute project code.  Interactively, retry
+even if the repository was previously declined.  With AUTOMATIC non-nil,
+skip batch mode and repositories declined during this session."
+  (interactive)
+  (unless (or (and automatic noninteractive) (trusted-content-p))
+    (condition-case err
+        (if-let* ((root (my/git-project-root)))
+            (unless (and automatic (gethash root my/declined-git-projects))
+              (if (yes-or-no-p
+                   (format "Trust Git project %s? This allows Emacs tools to execute project code. "
+                           (abbreviate-file-name root)))
+                  (progn
+                    (add-to-list 'trusted-content (abbreviate-file-name root))
+                    (remhash root my/declined-git-projects)
+                    (condition-case save-err
+                        (customize-save-variable 'trusted-content trusted-content)
+                      (error
+                       (message "Project trusted for this session; could not save trust: %s"
+                                (error-message-string save-err))))
+                    (my/restart-trusted-project-flymake root))
+                (puthash root t my/declined-git-projects)))
+          (unless automatic
+            (message "This file is not in a Git repository")))
+      (error (message "Could not check Git project trust: %s"
+                      (error-message-string err))))))
+
+(defun my/maybe-trust-git-project ()
+  "Offer to trust the Git repository when a file is opened interactively."
+  (my/trust-git-project t))
+
+(add-hook 'find-file-hook #'my/maybe-trust-git-project)
+
+;; ----------------------------------------------------------------------------
 ;; Auto-revert: keep buffers in sync with disk
 ;; ----------------------------------------------------------------------------
 
